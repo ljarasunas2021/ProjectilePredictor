@@ -50,5 +50,6 @@ public class AimDirection : MonoBehaviour {
         Vector3 realEndPoint = enemyShip.transform.position + fakeFutureEnemyPosPoint * shipLength / enemyShipSpeed;
 
         return realEndPoint - turret.transform.position;
+        //return null;
     }
 }

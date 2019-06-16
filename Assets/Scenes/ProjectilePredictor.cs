@@ -51,16 +51,19 @@ public class ProjectilePredictor : MonoBehaviour {
 
         // fakeFutureEnemyPosPoint: if the currentShipPos is the origin, fake future enemy pos point is a directional vector of where the future position will be
         Vector3 fakeFutureEnemyPosPoint = enemyShipRigidBody.velocity;
+        Debug.Log(enemyShip.GetComponent<Rigidbody>().velocity);
+
+        Debug.Log(enemyShip.transform.right * enemyShipSpeed);
         // fakeTurretPos: turret position if the currentShipPos is the origin
         Vector3 fakeTurretPos = turret.transform.position - enemyShip.transform.position;
         // find the currentShipPosAngle using https://www.analyzemath.com/stepbystep_mathworksheets/vectors/vector3D_angle.html formula
         float currentShipPosAngle = Mathf.Acos(Vector3.Dot(fakeFutureEnemyPosPoint, fakeTurretPos) / (fakeFutureEnemyPosPoint.magnitude * fakeTurretPos.magnitude));
-        Debug.Log("currentShipPosAngle " + currentShipPosAngle);
+        //Debug.Log("currentShipPosAngle " + currentShipPosAngle);
 
         // following is in radians due to Unity's obsession with radians
         // using formula found above, find futureShipPosAngle
         float futureShipPosAngle = Mathf.PI - currentShipPosAngle - Mathf.Asin(enemyShipSpeed * Mathf.Sin(currentShipPosAngle) / projectileSpeed);
-        Debug.Log("futureShipPosAngle " + futureShipPosAngle);
+        //Debug.Log("futureShipPosAngle " + futureShipPosAngle);
         // using shipLength or distance(currentShipPos, futureShipPos), we can find it using equation found above
         float shipLength = Vector3.Distance(enemyShip.transform.position, turret.transform.position) * Mathf.Sin(Mathf.PI - currentShipPosAngle - futureShipPosAngle) / Mathf.Sin(futureShipPosAngle);
         // using shipLength and currentShipPos we can find the position where the projectile and it will intersect
