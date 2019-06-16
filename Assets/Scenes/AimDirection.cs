@@ -2,30 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ProjectilePredictor : MonoBehaviour {
-    public GameObject turret;
-    public GameObject projectile;
-    public float projectileSpeed;
-    public float secondsInBetweenShots;
-    public GameObject enemyShip;
-    public float enemyShipSpeed;
+public class AimDirection : MonoBehaviour {
 
-    private Rigidbody enemyShipRigidBody;
-
-    private void Start() {
-        enemyShipRigidBody = enemyShip.GetComponent<Rigidbody>();
-        StartCoroutine(ShootProjectile());
-    }
-
-    // set velocity of ship to be its local right direction times its speed
-    private void FixedUpdate()
+    public Vector3? GetAimDirection(GameObject enemyShip, GameObject turret, GameObject bulletToFire)
     {
-        enemyShipRigidBody.velocity = enemyShip.transform.right * enemyShipSpeed;
-    }
-
-    private IEnumerator ShootProjectile() {
-        yield return new WaitForSeconds(secondsInBetweenShots);
-
         // Math behind the projectiles
         // ok so imagine a triangle with 3 vertices: the turret position, the current enemy ship position, and the future enemy ship position
         // using the law of sins
@@ -49,33 +29,26 @@ public class ProjectilePredictor : MonoBehaviour {
         // now we can find the futureShipPosAngle using measurements that we know
         // this will be implemented below
 
+        // get speeds
+        float projectileSpeed = bulletToFire.GetComponent<UnitProperties>().speed;
+        float enemyShipSpeed = enemyShip.GetComponent<UnitProperties>().speed;
         // fakeFutureEnemyPosPoint: if the currentShipPos is the origin, fake future enemy pos point is a directional vector of where the future position will be
-        Vector3 fakeFutureEnemyPosPoint = enemyShipRigidBody.velocity;
+        Vector3 fakeFutureEnemyPosPoint = enemyShip.transform.forward * enemyShipSpeed;
         // fakeTurretPos: turret position if the currentShipPos is the origin
         Vector3 fakeTurretPos = turret.transform.position - enemyShip.transform.position;
         // find the currentShipPosAngle using https://www.analyzemath.com/stepbystep_mathworksheets/vectors/vector3D_angle.html formula
         float currentShipPosAngle = Mathf.Acos(Vector3.Dot(fakeFutureEnemyPosPoint, fakeTurretPos) / (fakeFutureEnemyPosPoint.magnitude * fakeTurretPos.magnitude));
-        Debug.Log("currentShipPosAngle " + currentShipPosAngle);
 
         // following is in radians due to Unity's obsession with radians
         // using formula found above, find futureShipPosAngle
         float futureShipPosAngle = Mathf.PI - currentShipPosAngle - Mathf.Asin(enemyShipSpeed * Mathf.Sin(currentShipPosAngle) / projectileSpeed);
-        Debug.Log("futureShipPosAngle " + futureShipPosAngle);
+        if (float.IsNaN(futureShipPosAngle)) return null;
         // using shipLength or distance(currentShipPos, futureShipPos), we can find it using equation found above
         float shipLength = Vector3.Distance(enemyShip.transform.position, turret.transform.position) * Mathf.Sin(Mathf.PI - currentShipPosAngle - futureShipPosAngle) / Mathf.Sin(futureShipPosAngle);
         // using shipLength and currentShipPos we can find the position where the projectile and it will intersect
         // since shipLength = distance & enemyShipSpeed = speed, shipLength / enemyShipSpeed is time:
-        Vector3 realEndPoint = enemyShip.transform.position + enemyShipRigidBody.velocity * shipLength / enemyShipSpeed;
+        Vector3 realEndPoint = enemyShip.transform.position + fakeFutureEnemyPosPoint * shipLength / enemyShipSpeed;
 
-
-        // instantiate projectile
-        // make it look at realEndPoint
-        // set it along its velocity
-        GameObject projectile1 = Instantiate(projectile, turret.transform.position, Quaternion.Euler(new Vector3(0,0,0)));
-        projectile1.transform.LookAt(realEndPoint);
-        projectile1.GetComponent<Rigidbody>().velocity = projectile1.transform.forward * projectileSpeed;
-
-        // shoot another projectile
-        StartCoroutine(ShootProjectile());
+        return realEndPoint - turret.transform.position;
     }
 }
